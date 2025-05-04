@@ -230,7 +230,7 @@
       if (nivel === 1) {
         palavrasValidas = palavrasOriginais.filter(p => p.length === 3 || p.length === 4);
       } else {
-        palavrasValidas = palavrasOriginais.filter(p => p.length >= 3 && p.length <= 6);
+        palavrasValidas = palavrasOriginais.filter(p => p.length === 3 && p.length <= 6);
       }
 
       iniciarJogo();
