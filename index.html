@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Jogo de Alfabetização</title>
+  <style>
+    body {
+      font-family: "Comic Sans MS", cursive;
+      background-color: #fffaf0;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #6a1b9a;
+      font-size: 2.5rem;
+    }
+
+    .game-container {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 3rem;
+      margin: 30px auto;
+      flex-wrap: wrap;
+      min-height: 60px;
+      max-width: 100%;
+    }
+
+    .drop-zone {
+      width: 60px;
+      height: 70px;
+      margin: 8px;
+      border-bottom: 2px dashed #ce93d8;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2rem;
+      position: relative;
+    }
+
+    .drop-zone.highlight {
+      background-color: #f3e5f5;
+    }
+
+    .letter-draggable {
+      font-size: 2.5rem;
+      padding: 15px 25px;
+      background-color: #ffd54f;
+      border-radius: 25px;
+      display: inline-block;
+      cursor: grab;
+      margin: 10px;
+      transition: transform 0.2s;
+      box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.1);
+      user-select: none;
+    }
+
+    .letter-draggable:active {
+      transform: scale(1.05);
+    }
+
+    .letters-area {
+      margin-top: 40px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    #result {
+      margin-top: 30px;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .controls {
+      margin-top: 30px;
+    }
+
+    button {
+      font-size: 1.2rem;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+
+    button {
+      background-color: #ce93d8;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #ba68c8;
+    }
+
+    #score {
+      font-size: 2rem;
+      margin-top: 20px;
+      font-weight: bold;
+      color: #6a1b9a;
+    }
+
+    #level-selection {
+      margin-top: 30px;
+    }
+
+    .emoji {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+
+    @media (max-width: 600px) {
+      .drop-zone {
+        width: 50px;
+        height: 60px;
+        font-size: 1.5rem;
+      }
+
+      .letter-draggable {
+        font-size: 2rem;
+        padding: 10px 20px;
+      }
+
+      #score {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>Monte a Palavra 💜</h1>
+
+  <div class="controls">
+    <div id="level-selection">
+      <p>Escolha o nível de dificuldade:</p>
+      <button onclick="selecionarNivel(1)">Nível 1 (Fácil)</button>
+      <button onclick="selecionarNivel(2)">Nível 2 (Médio)</button>
+    </div>
+    <div id="jogo-controls" style="display:none;">
+      <button onclick="reiniciarJogo()">Reiniciar</button>
+    </div>
+  </div>
+
+  <div class="game-container" id="game"></div>
+  <div class="letters-area" id="letters"></div>
+  <div id="result"></div>
+  <div id="score">Pontuação: 0</div>
+
+  <script>
+    const palavrasOriginais = ['UVA', 'VACA', 'MAÇA', 'GATO', 'CAVALO', 'ABACAXI', 'BOLA', 'DADO', 'SAPO', 'FITA'];
+    const letrasExtras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    const emojis = {
+  'UVA': '🍇',
+  'VACA': '🐄',
+  'MAÇA': '🍎',
+  'GATO': '🐱',
+  'CAVALO': '🐴',
+  'ABACAXI': '🍍',
+  'BOLA': '⚽',
+  'DADO': '🎲',
+  'SAPO': '🐸',
+  'FITA': '🎀',
+  'SOL': '🌞',
+  'LUVA': '🧤',
+  'CAIXA': '📦',
+  'RELOGIO': '⌚',
+  'LIVRO': '📚',
+  'PATO': '🦆',
+  'CORUJA': '🦉',
+  'PEIXE': '🐟',
+  'CESTA': '🧺',
+  'MESA': '🪑',
+  'TIGRE': '🐯',
+  'PIZZA': '🍕',
+  'GUITARRA': '🎸',
+  'CARRO': '🚗',
+  'AVIÃO': '✈️',
+  'BICICLETA': '🚲',
+  'REI': '👑',
+  'RAINHA': '👸',
+  'LUA': '🌕',
+  'ESTRELA': '🌟',
+  'ANIMAL': '🐾',
+  'CACHORRO': '🐶',
+  'GALO': '🐓',
+  'LEÃO': '🦁',
+  'TUBARÃO': '🦈',
+  'MONTANHA': '🏔️',
+  'ÁRVORE': '🌳',
+  'FLOR': '🌸',
+  'SORVETE': '🍦',
+  'BANANA': '🍌',
+  'MELANCIA': '🍉',
+  'LIMÃO': '🍋',
+  'PAPEL': '📄',
+  'ESCRITORIO': '🏢',
+  'ROCHA': '🪨',
+  'PAREDE': '🧱',
+  'JANELA': '🪟',
+  'PORTA': '🚪',
+  'TELEFONE': '📞',
+  'CINEMA': '🍿',
+  'FESTA': '🎉',
+  'ESQUILO': '🐿️'
+};
+;
+
+    let palavrasValidas = [];
+    let palavraAlvo = '';
+    let letrasDisponiveis = [];
+    let acertos = 0;
+    let dicasFixas = [];
+    let nivelSelecionado = 1;
+
+    const gameContainer = document.getElementById('game');
+    const lettersContainer = document.getElementById('letters');
+    const result = document.getElementById('result');
+    const scoreContainer = document.getElementById('score');
+
+    function selecionarNivel(nivel) {
+      nivelSelecionado = nivel;
+      document.getElementById('level-selection').style.display = 'none';
+      document.getElementById('jogo-controls').style.display = 'block';
+
+      if (nivel === 1) {
+        palavrasValidas = palavrasOriginais.filter(p => p.length === 3 || p.length === 4);
+      } else {
+        palavrasValidas = palavrasOriginais.filter(p => p.length >= 3 && p.length <= 6);
+      }
+
+      iniciarJogo();
+    }
+
+    function iniciarJogo() {
+      palavraAlvo = palavrasValidas[Math.floor(Math.random() * palavrasValidas.length)];
+      letrasDisponiveis = gerarLetrasDisponiveis();
+      gerarDicasFixas();
+      montarJogo();
+    }
+
+    function gerarLetrasDisponiveis() {
+      const letrasPalavra = palavraAlvo.split('');
+      const extras = letrasExtras.sort(() => Math.random() - 0.5).slice(0, palavraAlvo.length * 2);
+      return [...letrasPalavra, ...extras].sort(() => Math.random() - 0.5);
+    }
+
+    function gerarDicasFixas() {
+      dicasFixas = [];
+      const total = palavraAlvo.length;
+      const numDicas = nivelSelecionado === 1
+        ? total - 1
+        : Math.min(Math.floor(total / 1.5), total - 1);
+
+      while (dicasFixas.length < numDicas) {
+        const pos = Math.floor(Math.random() * total);
+        if (!dicasFixas.includes(pos)) dicasFixas.push(pos);
+      }
+    }
+
+    function montarJogo() {
+      gameContainer.innerHTML = '';
+      lettersContainer.innerHTML = '';
+      result.textContent = '';
+
+      // Exibe o emoji de dica no modo médio
+      const emojiDiv = document.createElement('div');
+      emojiDiv.className = 'emoji';
+      emojiDiv.textContent = emojis[palavraAlvo];
+      gameContainer.appendChild(emojiDiv);
+
+      for (let i = 0; i < palavraAlvo.length; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'drop-zone';
+
+        if (dicasFixas.includes(i)) {
+          drop.textContent = palavraAlvo[i];
+          drop.style.pointerEvents = 'none';
+          drop.style.borderBottom = '2px solid #6a1b9a';
+        } else {
+          drop.ondragover = allowDrop;
+          drop.ondragenter = () => highlight(drop);
+          drop.ondragleave = () => unhighlight(drop);
+          drop.ondrop = dropLetra;
+          drop.addEventListener('click', removerLetra);
+        }
+
+        gameContainer.appendChild(drop);
+      }
+
+      letrasDisponiveis.forEach((letra, index) => {
+        const el = document.createElement('div');
+        el.className = 'letter-draggable';
+        el.textContent = letra;
+        el.setAttribute('draggable', true);
+        el.id = 'letra-' + letra + '-' + index + '-' + Math.random().toString(36).substring(7);
+        el.ondragstart = drag;
+        lettersContainer.appendChild(el);
+      });
+    }
+
+    function dropLetra(ev) {
+      ev.preventDefault();
+      const letraId = ev.dataTransfer.getData("text");
+      const letraEl = document.getElementById(letraId);
+
+      if (ev.target.classList.contains('drop-zone') && ev.target.children.length === 0) {
+        const letraCopia = letraEl.cloneNode(true);
+        letraCopia.setAttribute('draggable', false);
+        letraCopia.style.cursor = 'pointer';
+        letraCopia.onclick = removerLetra;
+        ev.target.appendChild(letraCopia);
+        letraEl.remove();
+        verificarPalavra();
+      }
+    }
+
+    function removerLetra(ev) {
+      const letraEl = ev.target;
+      const dropZone = letraEl.parentElement;
+
+      if (letraEl.classList.contains('letter-draggable')) {
+        letraEl.setAttribute('draggable', true);
+        letraEl.onclick = null;
+        lettersContainer.appendChild(letraEl);
+
+        // Remove o elemento da drop-zone
+        if (dropZone.classList.contains('drop-zone') && dropZone !== lettersContainer) {
+          dropZone.innerHTML = '';
+        }
+
+        verificarPalavra();
+      }
+    }
+
+    function allowDrop(ev) {
+      ev.preventDefault();
+    }
+
+    function drag(ev) {
+      ev.dataTransfer.setData("text", ev.target.id);
+    }
+
+    function highlight(el) {
+      el.classList.add('highlight');
+    }
+
+    function unhighlight(el) {
+      el.classList.remove('highlight');
+    }
+
+    function verificarPalavra() {
+      const dropZones = document.querySelectorAll('.drop-zone');
+      let palavraMontada = '';
+
+      dropZones.forEach((zone, i) => {
+        palavraMontada += dicasFixas.includes(i) ? palavraAlvo[i] : (zone.textContent.trim() || ' ');
+      });
+
+      if (!palavraMontada.includes(' ') && palavraMontada.length === palavraAlvo.length) {
+        if (palavraMontada === palavraAlvo) {
+          acertos++;
+          scoreContainer.textContent = `Pontuação: ${acertos}`;
+          result.textContent = `✅ Muito bem! Palavra formada: ${palavraMontada}`;
+          result.style.color = '#2e7d32';
+          setTimeout(iniciarJogo, 1500);
+        } else {
+          result.textContent = `❌ "${palavraMontada}" não é a palavra correta.`;
+          result.style.color = '#d32f2f';
+          setTimeout(montarJogo, 1500);
+        }
+      }
+    }
+
+    function reiniciarJogo() {
+      palavraAlvo = '';
+      letrasDisponiveis = [];
+      acertos = 0;
+      dicasFixas = [];
+      scoreContainer.textContent = `Pontuação: 0`;
+      gameContainer.innerHTML = '';
+      lettersContainer.innerHTML = '';
+      result.textContent = '';
+      document.getElementById('level-selection').style.display = 'block';
+      document.getElementById('jogo-controls').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
